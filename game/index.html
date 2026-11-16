@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INKBOUND: The Last Cartographer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <header id="ui-overlay">
+            <div class="hud-top">
+                <div class="stat">RIFTS: <span id="rifts-sealed">0</span>/9</div>
+                <div class="stat">TIDE: <span id="current-tide">1</span>/3</div>
+                <div class="stat">HULL: <span id="hull-integrity">100</span>%</div>
+            </div>
+            <div class="hud-bottom">
+                <div class="meter-container">
+                    <label>THREAD</label>
+                    <div class="meter"><div id="thread-bar" style="width: 100%;"></div></div>
+                </div>
+                <div class="meter-container">
+                    <label>DASH</label>
+                    <div class="meter"><div id="dash-bar" style="width: 100%;"></div></div>
+                </div>
+                <div class="stat">TIME: <span id="game-time">0:00</span></div>
+            </div>
+        </header>
+
+        <main>
+            <canvas id="game-canvas" width="1200" height="800"></canvas>
+            
+            <div id="screen-start" class="overlay">
+                <h1>INKBOUND</h1>
+                <p class="subtitle">The Last Cartographer</p>
+                <div class="controls">
+                    <p>WASD / ARROWS : Move Skiff</p>
+                    <p>SPACE (Hold) : Unfurling Survey Trail</p>
+                    <p>SPACE (Release) : Seal Rifts in Polygon</p>
+                    <p>SHIFT : Tactical Dodge</p>
+                </div>
+                <button id="btn-start">START SURVEY</button>
+            </div>
+
+            <div id="screen-pause" class="overlay hidden">
+                <h2>PAUSED</h2>
+                <button id="btn-resume">RESUME</button>
+                <p>Press P to Unpause</p>
+            </div>
+
+            <div id="screen-result" class="overlay hidden">
+                <h2 id="result-title">SURVEY COMPLETE</h2>
+                <div id="score-breakdown"></div>
+                <button id="btn-restart">RESTART</button>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

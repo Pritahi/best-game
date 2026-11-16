@@ -1,0 +1,4 @@
+#game-container { border: 12px solid var(--ink); box-shadow: none; }
+h1, h2 { font-family: 'Georgia', serif; }
+#ui-overlay { font-family: 'Georgia', serif; }
+.upg-btn { display: block; width: 100%; margin: 10px 0; }
