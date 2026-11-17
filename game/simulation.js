@@ -1,94 +1,54 @@
-export const WORLD = { w: 1200, h: 800 };
-export const state = {
-    player: { x: 600, y: 450, hull: 3, thread: 200, maxThread: 200, dashTimer: 0, dashCd: 0, invuln: 0, speed: 170, damageCd: 0 },
-    tide: 1, rifts: [], trail: [], sealedPolygons: [], enemies: [], sealedCount: 0,
-    time: 0, active: false, paused: false, phase: 'START', events: [], score: 0, grace: 10
-};
-
-export function reset() {
-    Object.assign(state, {
-        player: { x: 600, y: 450, hull: 3, thread: 200, maxThread: 200, dashTimer: 0, dashCd: 0, invuln: 0, speed: 170, damageCd: 0 },
-        tide: 1, rifts: [], trail: [], sealedPolygons: [], enemies: [], sealedCount: 0,
-        time: 0, active: false, paused: false, phase: 'START', events: [], score: 0, grace: 10
+export class Simulation {
+  constructor(w=1200,h=800){this.w=w;this.h=h;this.reset();}
+  reset(){
+    this.skiff={x:600,y:470,vx:0,vy:0,hp:100,maxHp:100,spd:2.8,thr:100,maxThr:100,reg:.25,dash:0,dashCd:0,invuln:0};
+    this.rifts=[];this.enemies=[];this.thread=[];this.particles=[];this.score=0;this.tide=1;this.state='START';this.stats={};this.message='';this.messageTime=0;this.ticks=0;this.spawnTide();
+  }
+  spawnTide(){
+    const layouts=[[[270,310],[600,545],[930,335]],[[245,360],[600,590],[955,345]],[[260,345],[600,555],[940,360]]];
+    this.rifts=layouts[this.tide-1].map(([x,y])=>({x,y,r:34}));
+    this.enemies=Array.from({length:this.tide},(_,i)=>({x:[150,1050,610][i],y:[680,690,710][i],phase:i*2.4,vx:0,vy:0}));
+  }
+  say(text){this.message=text;this.messageTime=150;}
+  update(keys={}){
+    if(this.state!=='PLAY')return;
+    this.ticks++;const s=this.skiff, pointer=keys.pointer;
+    let ax=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0), ay=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+    if(pointer?.down){const dx=pointer.x-s.x,dy=pointer.y-s.y,d=Math.hypot(dx,dy);if(d>12){ax=dx/d;ay=dy/d;}}
+    const m=Math.hypot(ax,ay)||1;
+    s.vx+=(ax/m)*.52;s.vy+=(ay/m)*.52;
+    const speed=Math.hypot(s.vx,s.vy), cap=s.spd*(s.dash>0?2.2:(pointer&&pointer.down?.92:1));
+    if(speed>cap){s.vx=s.vx/speed*cap;s.vy=s.vy/speed*cap;}
+    const drag=s.dash>0?.975:.89;s.vx*=drag;s.vy*=drag;s.x+=s.vx;s.y+=s.vy;
+    if(keys.ShiftPressed&&s.dashCd<=0&&s.thr>=18){const d=Math.hypot(s.vx,s.vy)||1;s.vx=s.vx/d*s.spd*2.2;s.vy=s.vy/d*s.spd*2.2;s.dash=30;s.dashCd=180;s.invuln=30;s.thr-=18;}
+    if(s.dash>0)s.dash--;if(s.dashCd>0)s.dashCd--;if(s.invuln>0)s.invuln--;
+    s.x=Math.max(30,Math.min(this.w-30,s.x));s.y=Math.max(175,Math.min(this.h-35,s.y));
+    const drawing=!!(keys.Space||pointer?.down);
+    if(drawing&&s.thr>0){
+      const last=this.thread[this.thread.length-1],dist=last?Math.hypot(s.x-last.x,s.y-last.y):Infinity;
+      if(!last||dist>=6){const cost=last?dist/12:0;if(s.thr>=cost){this.thread.push({x:s.x,y:s.y});s.thr-=cost;}else{this.say('THREAD SPENT — release to recover');this.thread=[];}}
+      if(this.thread.length>1&&this.thread.reduce((n,p,i,a)=>i?n+Math.hypot(p.x-a[i-1].x,p.y-a[i-1].y):0,0)>1200){this.thread=[];this.say('LOOP TOO LONG — thread reeled in');}
+    }else s.thr=Math.min(s.maxThr,s.thr+s.reg);
+    if(!drawing&&this.thread.length){const origin=this.thread[0],closed=this.thread.length>8&&Math.hypot(s.x-origin.x,s.y-origin.y)<=65; if(closed)this.seal();else{this.thread=[];this.say('LOOP OPEN — return to the gold origin before release');}}
+    this.enemies.forEach(e=>{
+      e.phase+=.035;const dx=s.x-e.x,dy=s.y-e.y,d=Math.hypot(dx,dy)||1;
+      e.vx+=(dx/d)*.012;e.vy+=(dy/d)*.012;
+      const wobble=Math.sin(e.phase)*.24;e.x+=e.vx+wobble;e.y+=e.vy+Math.cos(e.phase*1.3)*.18;
+      e.vx*=.985;e.vy*=.985;e.x=Math.max(20,Math.min(this.w-20,e.x));e.y=Math.max(165,Math.min(this.h-20,e.y));
+      if(d<28&&s.invuln<=0){s.hp=Math.max(0,s.hp-20);s.invuln=90;this.say('EEL STRIKE — hull damaged');if(s.hp<=0)this.state='GAMEOVER';}
     });
-}
-
-export function initTide(t) {
-    state.tide = t; state.grace = 10; state.trail = [];
-    const base = [[350,300],[850,300],[600,530]];
-    state.rifts = base.map(p => ({ x: p[0] + Math.random()*20, y: p[1] + Math.random()*20, sealed: false }));
-    state.enemies = Array.from({ length: 3 }, () => ({
-        x: Math.random() * WORLD.w, y: Math.random() * WORLD.h, speed: 42 + t * 7
-    }));
-}
-
-export function applyUpgrade(type) {
-    if (type === 'hull') state.player.hull = Math.min(5, state.player.hull + 1);
-    else state.player.maxThread += 60;
-    state.player.thread = state.player.maxThread;
-    if (state.tide < 3) initTide(state.tide + 1);
-    else state.phase = 'RESULT';
-    state.phase = 'PLAY';
-}
-
-function isInside(p, poly) {
-    let inside = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        if (((poly[i].y > p.y) !== (poly[j].y > p.y)) && (p.x < (poly[j].x - poly[i].x) * (p.y - p.y) / (poly[j].y - poly[i].y) + poly[i].x)) inside = !inside;
-    }
-    return inside;
-}
-
-export function update(dt, keys) {
-    if (!state.active || state.paused || state.phase !== 'PLAY') return;
-    state.time += dt; state.grace = Math.max(0, state.grace - dt);
-    if (state.time > 180) { state.phase = 'RESULT'; return; }
-    const p = state.player;
-    let ax = 0, ay = 0;
-    if (keys.ArrowUp || keys.w) ay -= 1; if (keys.ArrowDown || keys.s) ay += 1;
-    if (keys.ArrowLeft || keys.a) ax -= 1; if (keys.ArrowRight || keys.d) ax += 1;
-
-    if (keys.Shift && p.dashCd <= 0) {
-        p.dashTimer = 0.25; p.dashCd = 2; p.invuln = 0.6;
-        state.enemies = state.enemies.filter(e => Math.hypot(e.x - p.x, e.y - p.y) > 60);
-        state.events.push('dash');
-    }
-
-    const speed = p.dashTimer > 0 ? p.speed * 3 : p.speed;
-    const mag = Math.hypot(ax, ay) || 1;
-    p.x = Math.max(50, Math.min(1150, p.x + (ax / mag) * speed * dt));
-    p.y = Math.max(110, Math.min(690, p.y + (ay / mag) * speed * dt));
-
-    p.dashTimer -= dt; p.dashCd -= dt; p.invuln -= dt; p.damageCd -= dt;
-
-    if (keys.Space && p.thread > 0) {
-        const last = state.trail[state.trail.length - 1];
-        if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 6) {
-            state.trail.push({ x: p.x, y: p.y }); p.thread -= Math.hypot(p.x - (last?last.x:p.x), p.y - (last?last.y:p.y)) / 6;
-        }
-    } else if (state.trail.length > 0) {
-        const first = state.trail[0], last = state.trail[state.trail.length - 1];
-        const perim = state.trail.reduce((acc, pt, i, arr) => i === 0 ? 0 : acc + Math.hypot(pt.x - arr[i-1].x, pt.y - arr[i-1].y), 0);
-        if (Math.hypot(last.x - first.x, last.y - first.y) < 55 && state.trail.length >= 8 && perim > 100) {
-            let sealed = false;
-            state.rifts.forEach(r => { if (!r.sealed && isInside(r, state.trail)) { r.sealed = true; state.sealedCount++; sealed = true; } });
-            if (sealed) { state.sealedPolygons.push([...state.trail]); state.events.push('seal'); }
-            else state.events.push('fail');
-        }
-        state.trail = [];
-    } else p.thread = Math.min(p.maxThread, p.thread + 12 * dt);
-
-    state.enemies.forEach(e => {
-        const d = Math.hypot(p.x - e.x, p.y - e.y);
-        if (d > 5) { e.x += ((p.x - e.x) / d) * e.speed * dt; e.y += ((p.y - e.y) / d) * e.speed * dt; }
-        if (d < 30 && p.invuln <= 0 && p.damageCd <= 0 && state.grace <= 0) {
-            p.hull--; p.damageCd = 2; state.events.push('hit');
-            if (p.hull <= 0) state.phase = 'RESULT';
-        }
-    });
-
-    if (state.rifts.every(r => r.sealed)) {
-        if (state.tide < 3) state.phase = 'UPGRADE';
-        else { state.phase = 'RESULT'; state.score = state.sealedCount * 1000 + Math.floor(180 - state.time); }
-    }
+    this.particles=this.particles.filter(p=>p.life-->0);this.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=.98;p.vy*=.98;});
+    if(this.messageTime>0)this.messageTime--;
+  }
+  seal(){
+    const poly=this.thread,captured=this.rifts.filter(r=>this.isInside(r,poly));
+    if(!captured.length){this.say('NO RIFT ENCLOSED — chart a wider loop');this.thread=[];return;}
+    this.score+=captured.length*100*this.tide;
+    captured.forEach(r=>{for(let i=0;i<32;i++)this.particles.push({x:r.x,y:r.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,life:45,c:'#bffff4'});});
+    this.rifts=this.rifts.filter(r=>!captured.includes(r));this.say(`RIFT SEALED  +${captured.length*100*this.tide} CHARTING`);
+    if(!this.rifts.length)this.state=this.tide<3?'UPGRADE':'WIN';
+    this.thread=[];
+  }
+  isInside(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){if((poly[i].y>p.y)!==(poly[j].y>p.y)&&p.x<(poly[j].x-poly[i].x)*(p.y-poly[i].y)/(poly[j].y-poly[i].y)+poly[i].x)inside=!inside;}return inside;}
+  applyUpgrade(type){if(type==='hull'){this.skiff.maxHp*=1.25;this.skiff.hp=this.skiff.maxHp;}if(type==='speed')this.skiff.spd*=1.15;if(type==='thread'){this.skiff.reg*=1.4;this.skiff.maxThr+=20;this.skiff.thr=this.skiff.maxThr;}this.tide++;this.state='PLAY';this.spawnTide();this.say('NEW TIDE — chart the rifts');}
 }

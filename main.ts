@@ -15,6 +15,10 @@ try {
 
 const dossier = buildDossier(OUTPUT_DIR, {
   text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 262144 },
+  game_max_files: 993,
+  game_max_bytes: 50331648,
+  game_path_max_bytes: 1000,
 });
 
 writeFileSync(join(OUTPUT_DIR, 'dossier.json'), dossier);

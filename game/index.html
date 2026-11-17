@@ -8,53 +8,87 @@
 </head>
 <body>
     <div id="game-container">
-        <header id="ui-overlay">
+        <canvas id="game-canvas" width="1200" height="800"></canvas>
+        
+        <!-- UI Overlays -->
+        <div id="overlay" class="overlay">
+            <div id="menu-start" class="menu-content">
+                <h1 class="title">INKBOUND</h1>
+                <h2 class="subtitle">The Last Cartographer</h2>
+                <div class="tutorial">
+                    <p>Navigate the survey skiff across the midnight ink sea.</p>
+                    <p><span class="key">WASD</span> or <span class="key">ARROWS</span> to move. <span class="key">SHIFT</span> to dash.</p>
+                    <p>Hold <span class="key">SPACE</span> to draw; steer the skiff around a glowing rift.</p>
+                    <p>Return near the gold origin, then release <span class="key">SPACE</span> to seal. Mouse: drag a loop and release.</p>
+                    <p><span class="key">SHIFT</span> dashes through danger. Seal three rifts across three tides.</p>
+                </div>
+                <button id="btn-start" class="btn-gold">Begin Expedition</button>
+            </div>
+
+            <div id="menu-upgrade" class="menu-content hidden">
+                <h2 class="title">Tide Cleared</h2>
+                <p>Choose an upgrade for your skiff:</p>
+                <div class="upgrade-choices">
+                    <button class="upgrade-btn btn-gold" data-upgrade="hull">Reinforced Hull (+25% HP)</button>
+                    <button class="upgrade-btn btn-gold" data-upgrade="speed">Alchemical Engine (+15% Speed)</button>
+                    <button class="upgrade-btn btn-gold" data-upgrade="thread">Luminous Spool (+40% Regen, +20 Thread)</button>
+                </div>
+            </div>
+
+            <div id="menu-gameover" class="menu-content hidden">
+                <h1 class="title">Expedition Failed</h1>
+                <p>The skiff has been claimed by the ink.</p>
+                <p>Final Score: <span id="final-score-lost">0</span></p>
+                <button id="btn-restart-lost" class="btn-gold">Retry</button>
+            </div>
+
+            <div id="menu-win" class="menu-content hidden">
+                <h1 class="title">Expedition Successful</h1>
+                <p>The rifts are sealed. The ink is charted.</p>
+                <p>Final Score: <span id="final-score-won">0</span></p>
+                <button id="btn-restart-won" class="btn-gold">New Expedition</button>
+            </div>
+        </div>
+
+        <div id="hud" class="hidden">
             <div class="hud-top">
-                <div class="stat">RIFTS: <span id="rifts-sealed">0</span>/9</div>
-                <div class="stat">TIDE: <span id="current-tide">1</span>/3</div>
-                <div class="stat">HULL: <span id="hull-integrity">100</span>%</div>
+                <div class="hud-group">
+                    <label>Tide</label>
+                    <span id="hud-tide">1 / 3</span>
+                </div>
+                <div class="hud-group">
+                    <label>Rifts</label>
+                    <span id="hud-rifts">0 / 3</span>
+                </div>
+                <div class="hud-group">
+                    <label>Score</label>
+                    <span id="hud-score">0</span>
+                </div>
             </div>
             <div class="hud-bottom">
-                <div class="meter-container">
+                <div class="bar-container">
+                    <label>HULL</label>
+                    <div class="bar-bg"><div id="bar-hull" class="bar-fill hull"></div></div>
+                </div>
+                <div class="bar-container">
                     <label>THREAD</label>
-                    <div class="meter"><div id="thread-bar" style="width: 100%;"></div></div>
+                    <div class="bar-bg"><div id="bar-thread" class="bar-fill thread"></div></div>
                 </div>
-                <div class="meter-container">
+                <div class="bar-container">
                     <label>DASH</label>
-                    <div class="meter"><div id="dash-bar" style="width: 100%;"></div></div>
+                    <div class="bar-bg"><div id="bar-dash" class="bar-fill dash"></div></div>
                 </div>
-                <div class="stat">TIME: <span id="game-time">0:00</span></div>
             </div>
-        </header>
+        </div>
 
-        <main>
-            <canvas id="game-canvas" width="1200" height="800"></canvas>
-            
-            <div id="screen-start" class="overlay">
-                <h1>INKBOUND</h1>
-                <p class="subtitle">The Last Cartographer</p>
-                <div class="controls">
-                    <p>WASD / ARROWS : Move Skiff</p>
-                    <p>SPACE (Hold) : Unfurling Survey Trail</p>
-                    <p>SPACE (Release) : Seal Rifts in Polygon</p>
-                    <p>SHIFT : Tactical Dodge</p>
-                </div>
-                <button id="btn-start">START SURVEY</button>
-            </div>
-
-            <div id="screen-pause" class="overlay hidden">
-                <h2>PAUSED</h2>
-                <button id="btn-resume">RESUME</button>
-                <p>Press P to Unpause</p>
-            </div>
-
-            <div id="screen-result" class="overlay hidden">
-                <h2 id="result-title">SURVEY COMPLETE</h2>
-                <div id="score-breakdown"></div>
-                <button id="btn-restart">RESTART</button>
-            </div>
-        </main>
+        <div id="pause-overlay" class="overlay hidden">
+            <h1 class="title">PAUSED</h1>
+            <p>Press <span class="key">P</span> to Resume</p>
+            <p>Press <span class="key">M</span> to Mute</p>
+            <p>Press <span class="key">R</span> to Restart</p>
+        </div>
     </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>

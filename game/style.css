@@ -1,4 +1,20 @@
-#game-container { border: 12px solid var(--ink); box-shadow: none; }
-h1, h2 { font-family: 'Georgia', serif; }
-#ui-overlay { font-family: 'Georgia', serif; }
-.upg-btn { display: block; width: 100%; margin: 10px 0; }
+:root{color-scheme:dark;--gold:#d9b96e;--cream:#f1e7ca;--ink:#062321;--paper:#d8caa4}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(ellipse at 50% 38%,#172e2a,#070d0d 78%);color:var(--cream);font-family:Georgia,'Times New Roman',serif}
+body{display:grid;place-items:center}
+#game-container{position:relative;width:min(100vw,150vh);height:min(100vh,66.6667vw);aspect-ratio:3/2;overflow:hidden;background:#031d1b;box-shadow:0 20px 80px #000b,0 0 0 1px #d0b87566}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.hidden{display:none!important}
+.overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#001411b8,#00141170,#001411b8);padding:3%}
+.menu-content{width:min(68%,620px);max-height:94%;overflow:auto;text-align:center;color:#f1e7ca;padding:clamp(18px,3.2vw,42px);border:1px solid #dfc47e;background:linear-gradient(145deg,#172c28ed,#0a1d1beF);box-shadow:0 12px 40px #0009,inset 0 0 0 5px #d9b96e18;position:relative}
+.menu-content:before,.menu-content:after{content:'✦';position:absolute;color:var(--gold);font-size:13px;top:9px}.menu-content:before{left:11px}.menu-content:after{right:11px}
+.title{margin:0 0 8px;color:#f4e7c1;font-size:clamp(28px,5.5vw,58px);line-height:1.05;letter-spacing:.14em;text-shadow:0 2px 15px #d3b76938}
+.subtitle{margin:0 0 22px;color:#d5bb79;font-size:clamp(15px,2.3vw,25px);font-style:italic;font-weight:400;letter-spacing:.06em}
+.tutorial{margin:0 auto 22px;max-width:470px;text-align:left;color:#e4dec9;font-size:clamp(12px,1.5vw,16px);line-height:1.55}.tutorial p{margin:7px 0}.tutorial p:first-child{color:#e4c980}
+.key{display:inline-block;padding:1px 6px;border:1px solid #b99d5e;border-radius:2px;color:#f5d985;background:#162722;font:600 .78em ui-monospace,monospace;letter-spacing:.04em}
+.btn-gold{border:1px solid #f2da9c;background:linear-gradient(#d6b86e,#a9823f);color:#17211b;padding:12px 22px;font:700 clamp(12px,1.4vw,16px) Georgia,serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 0 #69532f,0 7px 18px #0005;transition:filter .15s,transform .15s}.btn-gold:hover{filter:brightness(1.17);transform:translateY(-1px)}.btn-gold:active{transform:translateY(2px);box-shadow:0 2px 0 #69532f}
+.upgrade-choices{display:grid;gap:11px;margin-top:20px}.upgrade-btn{width:100%;text-align:left;padding:13px 17px}
+#hud{position:absolute;z-index:5;inset:3.2% 4% auto;display:grid;gap:12px;pointer-events:none}.hud-top{display:flex;justify-content:space-between;align-items:center;padding:8px 15px;border:1px solid #d7bc73;background:rgba(232,220,188,.96);color:#16211b;box-shadow:0 4px 12px #0006}.hud-group{display:grid;gap:2px;text-align:center}.hud-group label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#463a20}.hud-group span{font-weight:bold;font-size:clamp(14px,2vw,20px);color:#18231c}.hud-bottom{display:flex;gap:30px}.bar-container{display:flex;align-items:center;gap:9px;flex:1}.bar-container label{font-size:11px;letter-spacing:.14em;color:#fff1cf;text-shadow:0 2px 5px #000}.bar-bg{height:10px;flex:1;background:#00100ed9;border:1px solid #cbb273;padding:1px}.bar-fill{height:100%;transition:width .15s}.bar-fill.hull{background:linear-gradient(90deg,#a64d3c,#efd08a)}.bar-fill.thread{background:linear-gradient(90deg,#277b70,#90f1d5)}.bar-fill.dash{background:linear-gradient(90deg,#b48137,#f8df98)}
+#pause-overlay{z-index:12;background:#031815b8;color:var(--cream);text-align:center}#pause-overlay .title{font-size:clamp(30px,5vw,54px)}#pause-overlay p{color:#dec983}
+@media(max-width:650px){.menu-content{width:88%;padding:4vw}.title{font-size:clamp(22px,6vw,42px)}.subtitle{margin-bottom:3vw}.tutorial{font-size:clamp(10px,2.3vw,14px);line-height:1.3}.tutorial p{margin:4px 0}.btn-gold{padding:2.4vw 3.5vw}.hud-top{padding:1vw 2vw}.hud-group label,.bar-container label{font-size:clamp(7px,1.4vw,10px)}.hud-group span{font-size:clamp(11px,2.3vw,16px)}.hud-bottom{gap:2vw}#hud{gap:1vw}}
+@media(max-height:500px){.menu-content{padding:2vh 3vw}.tutorial{line-height:1.2;margin-bottom:1vh}.tutorial p{margin:2px}.subtitle{margin-bottom:1vh}.title{font-size:8vh}}
