@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {Simulation} from './repo/game/simulation.js';
+import {createHazards,updateHazards} from './repo/game/hazards.js';
+import {CHARTS} from './repo/game/charts.js';
+import {loadProgress,recordChart} from './repo/game/progress.js';
+const store=new Map();globalThis.localStorage={getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)};
+const s=new Simulation();s.state='PLAY';assert.equal(s.totalCharts,4);assert.equal(s.totalRifts,14);
+const square=(x,y,z=65)=>[{x:x-z,y:y-z},{x:x+z,y:y-z},{x:x+z,y:y+z},{x:x-z,y:y+z}];
+s.thread=[{x:150,y:200},{x:1030,y:200},{x:1030,y:650},{x:150,y:650}];s.seal();assert.equal(s.state,'UPGRADE');assert.equal(s.stats.seals,3);assert(s.score>300);
+const old=s.skiff.spd;s.applyUpgrade('speed');assert(s.skiff.spd>old);assert.equal(s.tide,2);s.applyUpgrade('hull');assert.equal(s.tide,2);assert(s.enemies.some(e=>e.type==='spitter'));for(let i=0;i<180;i++)s.update({});assert(s.bolts.length>0);
+s.skiff.hp=50;s.skiff.thr=20;const buoy=s.rescues[0];s.skiff.x=buoy.x;s.skiff.y=buoy.y;s.skiff.invuln=90;s.update({});assert.equal(s.stats.rescues,1);assert.equal(s.skiff.hp,65);assert(s.skiff.thr>=40);
+s.tide=4;s.spawnTide();const boss=s.rifts.find(r=>r.type==='sovereign');s.thread=square(boss.x,boss.y);s.seal();assert.equal(boss.hp,1);assert(boss.locked);for(const ward of [...s.rifts.filter(r=>r.type==='ward')])for(let i=0;i<2;i++){s.thread=square(ward.x,ward.y);s.seal();}assert(!boss.locked);s.thread=square(boss.x,boss.y);s.seal();assert.equal(s.state,'WIN');
+const h=createHazards(CHARTS[2],1200,800,s.skiff);s.skiff.x=h.currents[0].x+10;s.skiff.y=h.currents[0].y;s.skiff.vx=0;s.skiff.vy=0;updateHazards(h,s.skiff,()=>{},()=>{});assert(Math.hypot(s.skiff.vx,s.skiff.vy)>0);
+s.reset();s.state='PLAY';s.skiff.hp=15;s.skiff.invuln=0;s.damage(15,'test');assert.equal(s.state,'GAMEOVER');s.reset();assert.equal(s.skiff.hp,100);assert.equal(s.stats.seals,0);
+recordChart(1,{grade:'GOLD'},100);recordChart(1,{grade:'BRONZE'},50);assert.equal(loadProgress().medals[0],'GOLD');assert.equal(loadProgress().bestScore,100);assert.equal(loadProgress().maxChart,2);
+console.log('PASS multi-rift bonus, state-guarded upgrades, turret projectiles, rescue pickup, armored wards, locked boss, boss win, currents, damage/loss/reset, monotone persistent medals/best');
