@@ -20,32 +20,36 @@
                     <p><span class="key">WASD</span> or <span class="key">ARROWS</span> to move. <span class="key">SHIFT</span> to dash.</p>
                     <p>Hold <span class="key">SPACE</span> to draw; steer the skiff around a glowing rift.</p>
                     <p>Return near the gold origin, then release <span class="key">SPACE</span> to seal. Mouse: drag a loop and release.</p>
-                    <p><span class="key">SHIFT</span> dashes through danger. Seal three rifts across three tides.</p>
+                    <p>Chart four regions: face reinforced wards, then seal the final Sovereign Rift.</p>
                 </div>
+                <div class="atlas-heading"><span>THE FOUR CHARTS</span><span id="best-record">BEST SCORE · 0</span></div>
+                <div id="atlas-cards" class="atlas-grid" aria-label="Chart atlas"></div>
                 <button id="btn-start" class="btn-gold">Begin Expedition</button>
             </div>
 
             <div id="menu-upgrade" class="menu-content hidden">
-                <h2 class="title">Tide Cleared</h2>
-                <p>Choose an upgrade for your skiff:</p>
+                <h2 class="title">Chart Complete</h2>
+                <div id="chart-clear-report" class="campaign-report"></div>
+                <p id="next-chart-intro" class="next-chart"></p>
+                <p>Choose one skiff refit:</p>
                 <div class="upgrade-choices">
-                    <button class="upgrade-btn btn-gold" data-upgrade="hull">Reinforced Hull (+25% HP)</button>
-                    <button class="upgrade-btn btn-gold" data-upgrade="speed">Alchemical Engine (+15% Speed)</button>
-                    <button class="upgrade-btn btn-gold" data-upgrade="thread">Luminous Spool (+40% Regen, +20 Thread)</button>
+                    <button class="upgrade-btn btn-gold" data-upgrade="hull">Reinforced Hull <small>+25% maximum hull, fully repair</small></button>
+                    <button class="upgrade-btn btn-gold" data-upgrade="speed">Alchemical Engine <small>+15% steering speed</small></button>
+                    <button class="upgrade-btn btn-gold" data-upgrade="thread">Luminous Spool <small>+40% thread regeneration, +20 capacity</small></button>
                 </div>
             </div>
 
             <div id="menu-gameover" class="menu-content hidden">
                 <h1 class="title">Expedition Failed</h1>
                 <p>The skiff has been claimed by the ink.</p>
-                <p>Final Score: <span id="final-score-lost">0</span></p>
+                <div id="campaign-result-lost" class="campaign-report"></div>
                 <button id="btn-restart-lost" class="btn-gold">Retry</button>
             </div>
 
             <div id="menu-win" class="menu-content hidden">
                 <h1 class="title">Expedition Successful</h1>
-                <p>The rifts are sealed. The ink is charted.</p>
-                <p>Final Score: <span id="final-score-won">0</span></p>
+                <p>The four regions are charted; the sovereign rift is sealed.</p>
+                <div id="campaign-result-won" class="campaign-report"></div>
                 <button id="btn-restart-won" class="btn-gold">New Expedition</button>
             </div>
         </div>
@@ -53,8 +57,8 @@
         <div id="hud" class="hidden">
             <div class="hud-top">
                 <div class="hud-group">
-                    <label>Tide</label>
-                    <span id="hud-tide">1 / 3</span>
+                    <label>Chart · Region</label>
+                    <span id="hud-tide">1 / 4</span>
                 </div>
                 <div class="hud-group">
                     <label>Rifts</label>
@@ -64,12 +68,16 @@
                     <label>Score</label>
                     <span id="hud-score">0</span>
                 </div>
+                <div class="hud-group"><label>Combo · Rescues</label><span id="hud-record">0 · 0</span></div>
             </div>
             <div class="hud-bottom">
+                <div class="hud-region" id="hud-region">VERDIGRIS REACH · CHART 1/4</div>
                 <div class="bar-container">
                     <label>HULL</label>
                     <div class="bar-bg"><div id="bar-hull" class="bar-fill hull"></div></div>
                 </div>
+                <div class="hazard-hint" id="hazard-hint"></div>
+                <div class="thread-hint" id="thread-hint"></div>
                 <div class="bar-container">
                     <label>THREAD</label>
                     <div class="bar-bg"><div id="bar-thread" class="bar-fill thread"></div></div>
