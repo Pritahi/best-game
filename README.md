@@ -13,6 +13,8 @@ Chart the midnight sea in a survey skiff. Capture glowing rifts with luminous th
 - **Mouse or touch drag:** steer and draw; release near the starting point to attempt a seal.
 - **Shift:** dash, granting brief invulnerability and consuming thread. Dash recharges over time.
 - **P:** pause or resume. **M:** mute or unmute procedural sound. **R:** restart the expedition.
+- **H:** open the Harbor. **L:** open the Ledger of Cartographers.
+- **Enter:** continue from a campaign win into the Inkdeep.
 
 ## Four-chart campaign
 
@@ -21,6 +23,18 @@ Every new expedition begins in **Verdigris Reach**. Completing a chart unlocks t
 Rescue buoys restore hull and thread. Each successful capture also restores thread. Multi-rift loops and consecutive seals award score bonuses; damage and failed loops break the combo. Between charts choose reinforced hull, a faster engine, or greater thread regeneration and capacity. Chart grades reflect damage and completion time. Best score, unlocked regions, and each region’s best medal are stored locally when a chart is completed.
 
 The HUD tracks region/chart, remaining capture objectives, hull, thread, dash recharge, score, combo, and rescues. Expedition results show elapsed time, hits, rescues, seals, score, and earned chart medals.
+
+## Sovereigns, Harbor, and Ledger
+
+Runs award sovereigns for seals (10 each), extra captures in a multi-rift loop (25 per additional capture), rescues (15 each), and chart medals (50 for Bronze, 100 for Silver, 200 for Gold). Earnings are banked on a win or loss and persist in the browser's local storage.
+
+Visit the Harbor with **H** to spend sovereigns on five persistent tuning tracks. Hull Plating, Sail Trim, and Thread Spool each have three tiers at 100, 200, and 350 sovereigns: they increase maximum hull, skiff speed, and maximum thread plus regeneration, respectively. Dash Coil has three tiers at 125, 250, and 400 sovereigns, extending the dash and shortening its cooldown. Ward Lodestone has two tiers at 200 and 400 sovereigns and reduces ward hit requirements by one per tier (to a minimum of one hit).
+
+The Ledger (**L**) ranks your best campaign score alongside five cartographers: Rhea Vance, Silas Tide, Mara Quell, Orin Blackwake, and Vesper Reef. It lists their fixed target scores for each chart and Inkdeep depth records. Newly bested rivals are saved locally, announced at run end, and award a 75-sovereign bonus each.
+
+## Inkdeep
+
+After winning the campaign by sealing the Sovereign Rift, press **Enter** to continue into the endless Inkdeep. It cycles the four charts in order, increasing hazard and rift scaling by `1 + 0.35 × cycle`. The completed-chart depth and its best depth are tracked, with the best persisted locally. Inkdeep run earnings are multiplied by `1 + 0.5 × cycle` when banked.
 
 ## Run locally
 

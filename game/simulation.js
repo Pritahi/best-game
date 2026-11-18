@@ -1,8 +1,14 @@
 import {CHARTS,TOTAL_CHARTS,TOTAL_RIFTS} from './charts.js';
 import {createHazards,updateHazards} from './hazards.js';
+import {bankRun,getPurse} from './economy.js';
+import {applyTuning} from './harbor.js';
+
+const INK_BEST_KEY='inkbound-inkdeep-best';
+const PURSE_KEY='inkbound-cartographer-sovereign-purse-v1';
+function loadInkBest(){try{const n=Number(localStorage.getItem(INK_BEST_KEY));return Number.isFinite(n)?Math.max(0,Math.floor(n)):0;}catch{return 0;}}
 
 export class Simulation {
-  constructor(w=1200,h=800){this.w=w;this.h=h;this.reset();}
+  constructor(w=1200,h=800){this.w=w;this.h=h;this.inkCycle=0;this.inkDepth=0;this.inkBestDepth=loadInkBest();this._banked=false;this.reset();applyTuning(this);}
   get totalCharts(){return TOTAL_CHARTS;}
   get totalRifts(){return TOTAL_RIFTS;}
   get currentChart(){return this.chart;}
@@ -10,16 +16,20 @@ export class Simulation {
   get chartName(){return this.chart?.name||'';}
   reset(){
     this.skiff={x:600,y:470,vx:0,vy:0,hp:100,maxHp:100,spd:2.8,thr:100,maxThr:100,reg:.35,dash:0,dashCd:0,invuln:0};
-    this.rifts=[];this.enemies=[];this.bolts=[];this.currents=[];this.rescues=[];this.thread=[];this.particles=[];this.score=0;this.tide=1;this.state='START';this.stats={elapsed:0,seals:0,rescues:0,hits:0,maxCombo:0};this.combo=0;this.chartResults=[];this.message='';this.messageTime=0;this.ticks=0;this.spawnTide();
+    this.rifts=[];this.enemies=[];this.bolts=[];this.currents=[];this.rescues=[];this.thread=[];this.particles=[];this.score=0;this.tide=1;this.state='START';this.inkCycle=0;this.inkDepth=0;this.inkScale=1;this.stats={elapsed:0,seals:0,rescues:0,hits:0,maxCombo:0,multiCaptures:0};this.combo=0;this.chartResults=[];this.message='';this.messageTime=0;this.ticks=0;this._banked=false;this._bankBase=null;this.spawnTide();this._beginBankSegment();applyTuning(this);
   }
   spawnTide(){
-    const chart=this.chart;this.rifts=chart.rifts.map(([name,x,y,hp=1])=>({name,x,y,r:33,hp,maxHp:hp,type:hp>1?'ward':'rift'}));
+    const source=this.chart,scale=1+.35*this.inkCycle;this.inkScale=scale;
+    const chart=this.inkCycle?{...source,eels:Math.ceil(source.eels*scale)}:source;
+    this.rifts=chart.rifts.map(([name,x,y,hp=1])=>{const scaled=this.inkCycle?Math.ceil(hp*scale):hp;return {name,x,y,r:33,hp:scaled,maxHp:scaled,type:hp>1?'ward':'rift'};});
     if(chart.sovereign)this.rifts.push({name:chart.sovereign[0],x:chart.sovereign[1],y:chart.sovereign[2],r:39,hp:1,maxHp:1,type:'sovereign',locked:true});
     const hazards=createHazards(chart,this.w,this.h,this.skiff);this.enemies=hazards.enemies;this.bolts=hazards.bolts;this.currents=hazards.currents;this.rescues=hazards.rescues;this.hazardTick=hazards.tick;
     this.chartStart=this.stats.elapsed;this.chartHits=this.stats.hits;this.chartSealStart=this.stats.seals;this.chartObjectives=this.rifts.reduce((n,r)=>n+r.hp,0);this.thread=[];
   }
   say(text){this.message=text;this.messageTime=150;}
   update(keys={}){
+    if(this.state==='WIN'&&keys.Enter)this.continueRun();
+    if(this.state==='INKDEEP_START'){this._startInkChart();return;}
     if(this.state!=='PLAY')return;
     this.ticks++;this.stats.elapsed++;const s=this.skiff,pointer=keys.pointer;
     let ax=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0),ay=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
@@ -35,22 +45,36 @@ export class Simulation {
       if(this.thread.length>1&&this.thread.reduce((n,p,i,a)=>i?n+Math.hypot(p.x-a[i-1].x,p.y-a[i-1].y):0,0)>1200){this.combo=0;this.thread=[];this.say('LOOP TOO LONG — thread reeled in');}}
     else s.thr=Math.min(s.maxThr,s.thr+s.reg);
     if(!drawing&&this.thread.length){const a=this.thread[0],closed=this.thread.length>8&&Math.hypot(s.x-a.x,s.y-a.y)<=65;if(closed)this.seal();else{this.thread=[];this.combo=0;this.say('LOOP OPEN — return to the gold origin');}}
+    const enemyPositions=this.enemies.map(e=>[e,e.x,e.y]),boltPositions=this.bolts.map(b=>[b,b.x,b.y]);
     const hazards={enemies:this.enemies,bolts:this.bolts,currents:this.currents,rescues:this.rescues,tick:this.hazardTick};
     updateHazards(hazards,s,(amount,text)=>this.damage(amount,text),(hp,thread)=>this.rescue(hp,thread));this.hazardTick=hazards.tick;this.bolts=hazards.bolts;this.rescues=hazards.rescues;
+    const scale=this.inkScale||1;if(scale!==1){for(const [e,x,y] of enemyPositions){e.x=x+(e.x-x)*scale;e.y=y+(e.y-y)*scale;}for(const [b,x,y] of boltPositions){if(this.bolts.includes(b)){b.x=x+(b.x-x)*scale;b.y=y+(b.y-y)*scale;}}}
     this.particles=this.particles.filter(p=>p.life-->0);this.particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=.98;p.vy*=.98;});if(this.messageTime>0)this.messageTime--;
   }
-  damage(amount,text){const s=this.skiff;if(s.invuln>0||this.state!=='PLAY')return;s.hp=Math.max(0,s.hp-amount);s.invuln=90;this.stats.hits++;this.combo=0;this.say(text);if(!s.hp)this.state='GAMEOVER';}
+  damage(amount,text){const s=this.skiff;if(s.invuln>0||this.state!=='PLAY')return;s.hp=Math.max(0,s.hp-amount);s.invuln=90;this.stats.hits++;this.combo=0;this.say(text);if(!s.hp){this.state='GAMEOVER';this._settleRun();}}
   rescue(hp,thread){const s=this.skiff;s.hp=Math.min(s.maxHp,s.hp+hp);s.thr=Math.min(s.maxThr,s.thr+thread);this.stats.rescues++;this.say(`RESCUE BUOY — +${hp} HULL · +${thread} THREAD`);}
   seal(){
     const captured=this.rifts.filter(r=>!r.locked&&this.isInside(r,this.thread));if(!captured.length){this.combo=0;this.say('NO RIFT ENCLOSED — chart a wider loop');this.thread=[];return;}
     let count=0,fractured=false;captured.forEach(r=>{r.hp--;count++;if(r.hp<=0)this.rifts.splice(this.rifts.indexOf(r),1);else fractured=true;for(let i=0;i<30;i++)this.particles.push({x:r.x,y:r.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,life:45,c:this.chart.tone});});this.stats.seals+=count;
     this.skiff.thr=Math.min(this.skiff.maxThr,this.skiff.thr+20*count);
-    this.combo++;this.stats.maxCombo=Math.max(this.stats.maxCombo,this.combo);const bonus=Math.max(0,count-1)*75*this.tide+Math.max(0,this.combo-1)*25*this.tide;this.score+=count*100*this.tide+bonus;
+    this.combo++;this.stats.maxCombo=Math.max(this.stats.maxCombo,this.combo);this.stats.multiCaptures+=Math.max(0,count-1);const bonus=Math.max(0,count-1)*75*this.tide+Math.max(0,this.combo-1)*25*this.tide;this.score+=count*100*this.tide+bonus;
     const wards=this.rifts.filter(r=>r.type==='ward');let unbound=false;if(this.tide===4&&wards.length===0){const sovereign=this.rifts.find(r=>r.type==='sovereign');if(sovereign?.locked){sovereign.locked=false;unbound=true;}}
     this.say(unbound?'THE SOVEREIGN RIFT IS UNBOUND — SEAL IT':fractured?'WARD FRACTURED — ONE SEAL REMAINS':`${count>1?`${count} RIFTS SEALED · `:''}SEAL ${this.combo}  +${count*100*this.tide+bonus}`);this.thread=[];
     if(!this.rifts.length)this.completeChart();
   }
-  completeChart(){const elapsed=this.stats.elapsed-this.chartStart,hits=this.stats.hits-this.chartHits;const grade=hits<=0&&elapsed<15000?'GOLD':hits<=2?'SILVER':'BRONZE';this.chartResults.push({name:this.chart.name,grade,elapsed,hits,seals:this.stats.seals-this.chartSealStart});this.say(`${this.chart.name.toUpperCase()} CHARTED · ${grade}`);this.state=this.tide<TOTAL_CHARTS?'UPGRADE':'WIN';if(this.state==='WIN')this.stats.grade=this.chartResults.every(c=>c.grade==='GOLD')?'GOLD':this.chartResults.filter(c=>c.grade==='GOLD'||c.grade==='SILVER').length>=3?'SILVER':'BRONZE';}
+  completeChart(){const elapsed=this.stats.elapsed-this.chartStart,hits=this.stats.hits-this.chartHits;const grade=hits<=0&&elapsed<15000?'GOLD':hits<=2?'SILVER':'BRONZE';this.chartResults.push({name:this.chart.name,grade,elapsed,hits,seals:this.stats.seals-this.chartSealStart});this.say(`${this.chart.name.toUpperCase()} CHARTED · ${grade}`);
+    if(this.inkCycle){this.inkDepth++;this._saveInkBest();this._settleRun();this.inkCycle=1+Math.floor(this.inkDepth/TOTAL_CHARTS);this.state='INKDEEP_START';return;}
+    this.state=this.tide<TOTAL_CHARTS?'UPGRADE':'WIN';if(this.state==='WIN'){this.stats.grade=this.chartResults.every(c=>c.grade==='GOLD')?'GOLD':this.chartResults.filter(c=>c.grade==='GOLD'||c.grade==='SILVER').length>=3?'SILVER':'BRONZE';this._settleRun();}}
+  continueRun(){if(this.state!=='WIN')return false;this.inkCycle=1;this.inkDepth=0;this.tide=1;this.state='INKDEEP_START';this._banked=false;this._beginBankSegment();return true;}
+  _startInkChart(){this.tide=this.inkDepth%TOTAL_CHARTS+1;this.spawnTide();this.state='PLAY';this._banked=false;this._beginBankSegment();this.say(`INKDEEP · DEPTH ${this.inkDepth+1}`);}
+  _beginBankSegment(){this._bankBase={seals:this.stats?.seals||0,rescues:this.stats?.rescues||0,multiCaptures:this.stats?.multiCaptures||0,medals:this.chartResults?.length||0};}
+  _settleRun(){if(this._banked)return;this._banked=true;const base=this._bankBase||{seals:0,rescues:0,multiCaptures:0,medals:0};
+    const summary={stats:{seals:this.stats.seals-base.seals,rescues:this.stats.rescues-base.rescues,multiCaptures:this.stats.multiCaptures-base.multiCaptures},chartResults:this.chartResults.slice(base.medals)};
+    const before=getPurse(),after=bankRun(summary),earned=Math.max(0,after-before),multiplier=1+.5*this.inkCycle;
+    if(multiplier>1&&earned){try{localStorage.setItem(PURSE_KEY,JSON.stringify(before+Math.floor(earned*multiplier)));}catch{}}
+  }
+  _saveInkBest(){this.inkBestDepth=Math.max(this.inkBestDepth,this.inkDepth);try{localStorage.setItem(INK_BEST_KEY,String(this.inkBestDepth));}catch{}}
+  runSummary(){return {score:this.score,stats:{...this.stats},medals:this.chartResults.map(chart=>chart.grade),inkDepth:this.inkDepth,inkCycle:this.inkCycle};}
   isInside(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){if((poly[i].y>p.y)!==(poly[j].y>p.y)&&p.x<(poly[j].x-poly[i].x)*(p.y-poly[i].y)/(poly[j].y-poly[i].y)+poly[i].x)inside=!inside;}return inside;}
   applyUpgrade(type){if(this.state!=='UPGRADE')return;if(type==='hull'){this.skiff.maxHp*=1.25;this.skiff.hp=this.skiff.maxHp;}if(type==='speed')this.skiff.spd*=1.15;if(type==='thread'){this.skiff.reg*=1.4;this.skiff.maxThr+=20;}this.tide++;this.skiff.x=600;this.skiff.y=470;this.skiff.vx=0;this.skiff.vy=0;this.skiff.hp=Math.min(this.skiff.maxHp,this.skiff.hp+10);this.skiff.thr=this.skiff.maxThr;this.skiff.invuln=60;this.thread=[];this.particles=[];this.spawnTide();this.state='PLAY';this.say(`${this.chart.name.toUpperCase()} — NEW CHART`);}
 }

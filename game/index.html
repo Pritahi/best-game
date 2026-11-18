@@ -24,7 +24,10 @@
                 </div>
                 <div class="atlas-heading"><span>THE FOUR CHARTS</span><span id="best-record">BEST SCORE · 0</span></div>
                 <div id="atlas-cards" class="atlas-grid" aria-label="Chart atlas"></div>
+                <p id="title-purse" class="next-chart">SOVEREIGNS · 0</p>
                 <button id="btn-start" class="btn-gold">Begin Expedition</button>
+                <button id="btn-open-harbor" class="btn-gold">Harbor · H</button>
+                <button id="btn-open-ledger" class="btn-gold">Ledger · L</button>
             </div>
 
             <div id="menu-upgrade" class="menu-content hidden">
@@ -37,6 +40,22 @@
                     <button class="upgrade-btn btn-gold" data-upgrade="speed">Alchemical Engine <small>+15% steering speed</small></button>
                     <button class="upgrade-btn btn-gold" data-upgrade="thread">Luminous Spool <small>+40% thread regeneration, +20 capacity</small></button>
                 </div>
+                <button id="btn-upgrade-harbor" class="btn-gold">Visit Harbor · H</button>
+                <button id="btn-upgrade-ledger" class="btn-gold">Open Ledger · L</button>
+            </div>
+
+            <div id="menu-harbor" class="menu-content hidden">
+                <h2 class="title">The Harbor</h2>
+                <p class="next-chart">Sovereign purse · <strong id="harbor-purse">0</strong></p>
+                <div id="harbor-tracks"></div>
+                <p id="harbor-status" class="next-chart" aria-live="polite"></p>
+                <button id="btn-harbor-back" class="btn-gold">Return</button>
+            </div>
+
+            <div id="menu-ledger" class="menu-content hidden">
+                <h2 class="title">Ledger of Cartographers</h2>
+                <div id="ledger-table"></div>
+                <button id="btn-ledger-back" class="btn-gold">Return</button>
             </div>
 
             <div id="menu-gameover" class="menu-content hidden">
@@ -50,6 +69,8 @@
                 <h1 class="title">Expedition Successful</h1>
                 <p>The four regions are charted; the sovereign rift is sealed.</p>
                 <div id="campaign-result-won" class="campaign-report"></div>
+                <p id="inkdeep-prompt" class="next-chart">Press ENTER to sail into the Inkdeep</p>
+                <button id="btn-continue-inkdeep" class="btn-gold">Sail into the Inkdeep</button>
                 <button id="btn-restart-won" class="btn-gold">New Expedition</button>
             </div>
         </div>
@@ -68,6 +89,7 @@
                     <label>Score</label>
                     <span id="hud-score">0</span>
                 </div>
+                <div class="hud-group"><label>Sovereigns</label><span id="hud-purse">0</span></div>
                 <div class="hud-group"><label>Combo · Rescues</label><span id="hud-record">0 · 0</span></div>
             </div>
             <div class="hud-bottom">
